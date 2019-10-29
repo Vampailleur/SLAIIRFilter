@@ -46,4 +46,9 @@ function output = IIRSLAFixedPointFilter (numQuant, denQuant, iirQuant, input)
   %% Convergent rounding
   %% In Matlab, one would use the "convergent" function
   output =  floor((all_pole_response(1:length(input)) + + 2^(iirQuant.nbAddPrecisionBits - 1))/(2^(iirQuant.nbAddPrecisionBits)) );
+  maxValue = 2^(iirQuant.nbBitsOutput-1)-1;
+  minValue = -2^(iirQuant.nbBitsOutput-1);
+  output(output > maxValue) = maxValue;
+  output(output < minValue) = minValue;
+  
 endfunction

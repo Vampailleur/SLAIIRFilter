@@ -16,7 +16,7 @@
 %% Author: Benjamin <Benjamin@MSI>
 %% Created: 2019-02-09
 
-function  createSLAFileTB (ENTITY_NAME, iirQuant, stimulus, expectedResponse)
+function  createSLAFileTB (ENTITY_NAME, path, iirQuant, stimulus, expectedResponse)
 	
   rangeString = '%d downto %d';
   rangeStringAlt = '%d to %d';
@@ -26,8 +26,8 @@ function  createSLAFileTB (ENTITY_NAME, iirQuant, stimulus, expectedResponse)
   
   dinRangeString = sprintf(rangeString, iirQuant.nbBitsInput-1, 0);
   doutRangeString = sprintf(rangeString, iirQuant.nbBitsOutput-1, 0);
-  text = fileread('IIR_SLA_FILE_TB.vhd');
-  fileName = [ENTITY_NAME, '_FILE_TB'];
+  text = fileread('..\VHDLTemplates\IIR_SLA_TEMPLATE_FILE_TB.vhd');
+  fileName = [path, '\',ENTITY_NAME, '_FILE_TB'];
   
   fidOut = fopen([fileName, '.vhd'], 'w+');  
  % disp(text)
@@ -47,8 +47,8 @@ function  createSLAFileTB (ENTITY_NAME, iirQuant, stimulus, expectedResponse)
 
 
   fclose(fidOut);
-  createDoFile('runFileTB', ENTITY_NAME, fileName);
-  createBatFile('runFileTB');
+  createDoFile('runFileTB',path,  ENTITY_NAME, fileName);
+  createBatFile('runFileTB', path);
 
 endfunction
 

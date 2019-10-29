@@ -30,9 +30,11 @@ function [num_sl, den_sl] = scattered_lookahead_transform (num, den, M)
   if (abs(imag(zeros_den)) < eps)
 
     for ii = 1 : M-1
-      polynom = [1, -2*zeros_den(ii) * cos(2*pi/M), zeros_den(ii).^2];
-      den_sl = conv(den_sl, polynom);
-      num_sl = conv(num_sl, polynom);
+      for jj = 1 : 2 
+         polynom = [1, zeros_den(jj)];
+         den_sl = conv(den_sl, polynom);
+         num_sl = conv(num_sl, polynom);
+      end  
     end
    else
     angle_zero = angle(zeros_den(1));

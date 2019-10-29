@@ -36,6 +36,7 @@ constant ALL_POLE_COEF_ARRAY : COEF_ARRAY_T (0 to 4) := ALL_POLE_COEF_ARRAY_INIT
 
 type TEMP_RES_T is array(natural range <>) of signed(DIN_PLUS_COEF_RANGE);
 signal temp_res : TEMP_RES_T( 0 to 4);
+signal temp_res2 : TEMP_RES_T(0 to 2);
 signal FIR_SUM : signed(FIR_SUM_RANGE);
 signal DATA_IN_VAL_SR : std_logic_vector(1 to 3);
 
@@ -57,12 +58,12 @@ signal ALL_POLE_OUT_VAL : std_logic := '0';
 
 function roundSat (signal input : signed; MSB : natural; LSB : natural) return signed is
 constant roundFactor : signed(LSB  downto 0) := to_signed(2**(LSB-1), LSB+1);
-variable tempSum : signed(input'range);
+variable tempSum : signed(input'left+1 downto 0);
 begin
-	tempSum := input + roundFactor;
-	if (tempSum >= (2**(MSB-1))) then
+	tempSum := resize(input,tempSum'length) + roundFactor;
+	if (tempSum >= (2**(MSB))) then
 		return to_signed(2**(MSB- LSB)-1, MSB-LSB+1);
-	elsif (tempSum < -(2**(MSB-1))) then
+	elsif (tempSum < -(2**(MSB))) then
 		return to_signed(-2**(MSB- LSB), MSB-LSB+1);
 	else
 		return tempSum(MSB downto LSB);
@@ -83,7 +84,7 @@ begin
 end process;
 
 FIR_PROCESS: process(CLK)
-variable temp_fir_sum_v : signed(FIR_SUM'range);
+variable temp_fir_sum_v : signed(DIN_PLUS_COEF_RANGE);
 begin
 	if rising_edge(CLK) then
 		
@@ -96,16 +97,23 @@ begin
 				DATA_IN_SR <=   DATA_IN_SR(3 downto 0) & data_in_buf;
 			end if;
 			DATA_IN_VAL_SR <= data_in_buf_val & DATA_IN_VAL_SR(1 to 2);
-			temp_fir_sum_v := to_signed(0,temp_fir_sum_v'length);
+
 			for iCoef in 0 to 4 loop
-				temp_fir_sum_v := temp_fir_sum_v + temp_res(iCoef);
 				temp_res(iCoef) <= DATA_IN_SR(iCoef) * FIR_COEF_ARRAY(iCoef);
 			end loop;
-			FIR_SUM_VAL <= DATA_IN_VAL_SR(2);
-			if (DATA_IN_VAL_SR(2) = '1') then
-				FIR_SUM <= temp_fir_sum_v;
+			temp_res2(0) <= temp_res(0) + temp_res(1);
+			temp_res2(1) <= temp_res(2);
+			temp_res2(2) <= temp_res(3) + temp_res(4);
+			temp_fir_sum_v := to_signed(0,temp_fir_sum_v'length);
+			for iCoef in 0 to 2 loop
+				temp_fir_sum_v := temp_fir_sum_v + temp_res2(iCoef);
+			end loop;
+			FIR_SUM_VAL <= DATA_IN_VAL_SR(3);
+			-- Up to the designer that this slice will not result in underflow
+			-- Should not happen if nbBitsFIRGain is properly set
+			if (DATA_IN_VAL_SR(3) = '1') then
+				FIR_SUM <= temp_fir_sum_v(FIR_SUM'range); 
 			end if;
-			--end
 		end if;
 	end if;
 end process;
@@ -115,6 +123,8 @@ end process;
 ALL_POLE_PROCESS : process(CLK)
 variable fractionSaved_v : signed(FULL_SUM_RANGE);
 variable full_sum_v : signed(FULL_SUM_RANGE);
+variable a2_fir_sum_temp_v : signed(a2_fir_sum_z2'left+ 1 downto 0);
+variable a4_fir_sum_temp_v : signed(a4_fir_sum_z4'left+ 1 downto 0);
 begin
 	if rising_edge(CLK) then
 		
@@ -133,8 +143,11 @@ begin
 				fractionSaved <= fractionSaved_v(fractionSaved'range);
 				
 				ALL_POLE_OUT_VAL <= '1';
-				a2_fir_sum_z2 <= ALL_POLE_COEF_ARRAY(2)*output_sr(1);
-				a4_fir_sum_z4 <= ALL_POLE_COEF_ARRAY(4)*output_sr(3);
+				-- Multiply 2 signed numbers together yield 2 sign bits, we can safely flush one bit
+				a2_fir_sum_temp_v := ALL_POLE_COEF_ARRAY(2)*output_sr(1);
+				a2_fir_sum_z2 <= a2_fir_sum_temp_v(a2_fir_sum_temp_v'left-1 downto 0);
+				a4_fir_sum_temp_v := ALL_POLE_COEF_ARRAY(4)*output_sr(3);
+				a4_fir_sum_z4 <= a4_fir_sum_temp_v(a4_fir_sum_temp_v'left-1 downto 0);
 			end if;
 
 		end if;

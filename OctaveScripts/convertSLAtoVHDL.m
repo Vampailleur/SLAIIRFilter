@@ -22,7 +22,7 @@
 ## Author: Benjamin <Benjamin@MSI>
 ## Created: 2019-02-09
 
-function  convertSLAtoVHDL (ENTITY_NAME, numQuant, denQuant, iirQuant)
+function  convertSLAtoVHDL (ENTITY_NAME,path, numQuant, denQuant, iirQuant)
 	
   %fid =fopen('IIR_SLA_TEMPLATE.vhd');
   rangeString = '%d downto %d';
@@ -32,7 +32,8 @@ function  convertSLAtoVHDL (ENTITY_NAME, numQuant, denQuant, iirQuant)
   nbAccBits = iirQuant.nbBitsInput + iirQuant.nbBitsFIRGain + iirQuant.nbBitsIIRGain + iirQuant.nbBitsCoef + iirQuant.nbAddPrecisionBits;
   nbAccFracBits = iirQuant.nbFracBitsCoef  + iirQuant.nbAddPrecisionBits;
   nbBitsFir = iirQuant.nbBitsInput + iirQuant.nbFracBitsCoef +  iirQuant.nbBitsFIRGain;
-  nbFullSumBits = iirQuant.nbBitsCoef + iirQuant.nbBitsInput  + iirQuant.nbAddPrecisionBits + iirQuant.nbBitsFIRGain + iirQuant.nbBitsIIRGain;
+  % set one guard bit, that should always be there
+  nbFullSumBits =   iirQuant.nbBitsCoef + iirQuant.nbBitsInput  + iirQuant.nbAddPrecisionBits + iirQuant.nbBitsFIRGain + iirQuant.nbBitsIIRGain;
   
   dinRangeString = sprintf(rangeString, iirQuant.nbBitsInput-1, 0);
   doutRangeString = sprintf(rangeString, iirQuant.nbBitsOutput-1, 0);
@@ -40,18 +41,20 @@ function  convertSLAtoVHDL (ENTITY_NAME, numQuant, denQuant, iirQuant)
   firSumRangeString = sprintf(rangeString, nbBitsFir - 1, 0);
   dinPlusCoefRange = sprintf(rangeString, iirQuant.nbBitsInput + iirQuant.nbBitsCoef -1, 0);
   outputSliceRangeString = sprintf(rangeString, iirQuant.nbBitsOutput +  iirQuant.nbAddPrecisionBits - 1, iirQuant.nbAddPrecisionBits);
-  outputPlusGuardSliceRangeString = sprintf(rangeString, iirQuant.nbFracBitsCoef + iirQuant.nbBitsOutput + iirQuant.nbAddPrecisionBits - 1 , iirQuant.nbFracBitsCoef);
+  outputPlusGuardSliceRangeString = sprintf(rangeString, iirQuant.nbFracBitsCoef + iirQuant.nbBitsOutput + iirQuant.nbAddPrecisionBits  , iirQuant.nbFracBitsCoef);
   accFullRangeString = sprintf(rangeString, nbAccBits - 1, 0);
   accFracRangeString = sprintf(rangeString, nbAccFracBits - 1, 0);
   fullSumRangeString = sprintf(rangeString, nbFullSumBits - 1, 0);
   nbGuardBitsString =  sprintf('%d', iirQuant.nbAddPrecisionBits);
   nbAccFracBitsString =  sprintf('%d', nbAccFracBits);
-  doutPlusGuardBitsRangeString = sprintf(rangeString, iirQuant.nbBitsOutput + iirQuant.nbAddPrecisionBits -1, 0);
+  doutPlusGuardBitsRangeString = sprintf(rangeString, iirQuant.nbBitsOutput + iirQuant.nbAddPrecisionBits , 0);
   outputMSBString = sprintf('%d', iirQuant.nbBitsOutput +  iirQuant.nbAddPrecisionBits - 1);
   outputLSBString = sprintf('%d', iirQuant.nbAddPrecisionBits); 
   nbCoefFracBitsString = sprintf('%d', iirQuant.nbFracBitsCoef);
-  text = fileread('IIR_SLA_TEMPLATE.vhd');
-  fidOut = fopen([ENTITY_NAME, '.vhd'], 'w+');  
+  text = fileread('..\VHDLTemplates\IIR_SLA_TEMPLATE.vhd');
+  
+  fileNameOut = [ENTITY_NAME, '.vhd'];
+  fidOut = fopen([path,'\',ENTITY_NAME, '.vhd'], 'w+');  
  % disp(text)
   patterns = {'DIN_PLUS_COEF_RANGE','DIN_RANGE','DOUT_RANGE', ...
   'COEF_RANGE','FIR_SUM_RANGE', 'OUTPUT_SLICE', 'ACC_RANGE',  ...
@@ -79,7 +82,8 @@ function  convertSLAtoVHDL (ENTITY_NAME, numQuant, denQuant, iirQuant)
    % text = regexprep(text, 'ALL_POLE_COEF_ARRAY_INIT', firCoefArrayInitString);    
        fprintf(fidOut, '%s', text);
   fclose(fidOut);
-
+    
+   disp([fileNameOut, ' generated']);
 
 endfunction
 

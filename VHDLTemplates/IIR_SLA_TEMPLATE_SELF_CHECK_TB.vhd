@@ -103,6 +103,7 @@ begin
 		tic;
 	end loop;
 	tic(20);
+	report "simulation finished";
 	std.env.finish;
 end process;
 

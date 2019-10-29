@@ -9,25 +9,28 @@
 ## but WITHOUT ANY WARRANTY; without even the implied warranty of
 ## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ## GNU General Public License for more details.
-## 
-## You should have received a copy of the GNU General Public License
-## along with this program.  If not, see <http://www.gnu.org/licenses/>.
+%%
+%% You should have received a copy of the GNU General Public License
+%% along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-## -*- texinfo -*- 
-## @deftypefn {} {@var{retval} =} adjust_power2_coefs (@var{input1}, @var{input2})
-##
-## @seealso{}
-## @end deftypefn
+%% -*- texinfo -*- 
+%% @deftypefn {} {@var{retval} =} adjust_power2_coefs (@var{coefficients}, @var{type})
+%% type : 0 = low-pass, 1 = high-pass
+%% This function adjust the sum of the cofficients. For low-pass, it will be a power of 2
+%% For high-pass filters, it will be 0
+%% Coefficients sum is equal to the DC gain of the corresponding FIR filter
+%% @seealso{}
+%% @end deftypefn
 
-## Author: Benjamin <Benjamin@MSI>
-## Created: 2019-02-08
+%% Author: Benjamin <Benjamin@MSI>
+%% Created: 2019-02-08
 
 function [coefficients] = adjust_power2_coefs (coefficients, type)
-  if (type == 'high')
+  if ((type == 1))
     sumExpected = 0;
   else
     sum_exp = ceil(log2(sum(coefficients)));
-    sumExpected = 2^(sum_exp);
+    sumExpected = 2^(sum_exp);  
   end
   
   diff = sum(coefficients) - sumExpected;
